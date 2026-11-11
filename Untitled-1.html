@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kpop Song Quiz | K-pop Music Trivia</title>
+    <meta id="meta-desc" name="description" content="Think you know K-pop? Guess the song before your friends do! Play solo or battle friends in real time.">
+    <style>
+        :root {
+            --bg-color: #050610;
+            --primary-purple: #7C3AED;
+            --accent-gold: #FCD34D;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-color);
+            color: white;
+            font-family: -apple-system, system-ui, "Segoe UI", "Hiragino Sans", "Noto Sans JP", "Malgun Gothic", "Noto Sans KR", sans-serif;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        #bg-video {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -2;
+            transform: translate(-50%, -50%);
+            filter: blur(8px) brightness(0.4);
+            object-fit: cover;
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle, rgba(124,58,237,0.1) 0%, rgba(5,6,16,0.8) 100%);
+            z-index: -1;
+        }
+
+        /* Language Switcher */
+        .lang-switcher {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 12px;
+            z-index: 100;
+        }
+
+        .flag-btn {
+            width: 35px;
+            height: 24px;
+            cursor: pointer;
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: 0.2s;
+            object-fit: cover;
+            opacity: 0.6;
+        }
+        .flag-btn:hover { transform: scale(1.1); border-color: white; opacity: 1; }
+        .flag-btn.active { border-color: var(--accent-gold); opacity: 1; }
+
+        .page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+            padding: 70px 16px 40px;
+        }
+
+        /* Cards */
+        .container {
+            text-align: center;
+            padding: 40px 24px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .container.wide { max-width: 650px; }
+
+        @media (min-width: 1024px) {
+            .container { max-width: 650px; padding: 60px 40px; }
+            .container.wide { max-width: 800px; }
+            .logo { width: 140px !important; height: 140px !important; }
+            h1 { font-size: 2.8rem !important; }
+            .tagline { font-size: 1.4rem !important; }
+            .apple-img { height: 55px !important; }
+            .google-img { height: 82px !important; }
+            .social-icon { width: 45px !important; height: 45px !important; }
+        }
+
+        .logo { width: 100px; height: 100px; border-radius: 25px; margin-bottom: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { font-size: 1.8rem; font-weight: 900; margin: 10px 0; }
+        h2 { font-size: 1.3rem; font-weight: 900; margin: 0 0 14px; }
+        .tagline { color: rgba(255,255,255,0.7); margin: 0 0 25px; font-size: 1rem; line-height: 1.5; }
+
+        .badge-container { display: flex; flex-direction: column; align-items: center; gap: 0; }
+        .apple-img { height: 44px; width: auto; margin-bottom: 5px; }
+        .google-img { height: 66px; width: auto; margin-top: -8px; }
+
+        /* About section */
+        .about-text { color: rgba(255,255,255,0.75); line-height: 1.7; font-size: 1rem; margin: 0; }
+
+        .section-label {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--accent-gold);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin: 0 0 18px;
+        }
+
+        .steps { display: grid; grid-template-columns: 1fr; gap: 14px; text-align: left; }
+        .step {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 16px;
+        }
+        .step-num {
+            flex-shrink: 0;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--primary-purple);
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .step-title { font-weight: 800; margin-bottom: 2px; }
+        .step-desc { color: rgba(255,255,255,0.65); font-size: 0.92rem; line-height: 1.5; }
+
+        .features { display: grid; grid-template-columns: 1fr; gap: 14px; text-align: left; }
+        .feature {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 18px;
+        }
+        .feature-title { font-weight: 800; margin-bottom: 6px; }
+        .feature-desc { color: rgba(255,255,255,0.65); font-size: 0.92rem; line-height: 1.5; }
+
+        @media (min-width: 700px) {
+            .steps { grid-template-columns: repeat(3, 1fr); }
+            .step { flex-direction: column; }
+            .features { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* Social */
+        .social-section { margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .social-title { font-size: 0.8rem; font-weight: 800; color: var(--accent-gold); letter-spacing: 1px; margin-bottom: 15px; text-transform: uppercase; }
+        .social-grid { display: flex; justify-content: center; gap: 20px; }
+        .social-icon { width: 32px; height: 32px; opacity: 0.8; transition: 0.2s; }
+        .social-icon:hover { opacity: 1; transform: translateY(-3px); }
+
+        .footer-links { margin-top: 25px; }
+        .footer-links a { color: rgba(255,255,255,0.4); font-size: 0.75rem; text-decoration: none; margin: 0 10px; }
+        .footer-links a:hover { color: white; text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <video autoplay muted loop playsinline id="bg-video">
+        <source src="music.mp4" type="video/mp4">
+    </video>
+    <div class="overlay"></div>
+
+    <div class="lang-switcher">
+        <img src="https://flagcdn.com/w80/gb.png" class="flag-btn" id="flag-en" onclick="setLang('en')" alt="English">
+        <img src="https://flagcdn.com/w80/jp.png" class="flag-btn" id="flag-ja" onclick="setLang('ja')" alt="日本語">
+        <img src="https://flagcdn.com/w80/kr.png" class="flag-btn" id="flag-ko" onclick="setLang('ko')" alt="한국어">
+    </div>
+
+    <div class="page">
+
+        <!-- HERO -->
+        <div class="container">
+            <img src="logo.png" alt="Kpop Song Quiz logo" class="logo">
+            <h1 data-i18n="title">Kpop Song Quiz</h1>
+            <p class="tagline" data-i18n="desc">Think you know K-pop? Guess the song before your friends do!</p>
+
+            <div class="badge-container">
+                <!-- TODO: replace with your Kpop app's App Store link -->
+                <a href="https://apps.apple.com/app/idYOUR_KPOP_APP_ID">
+                    <img id="apple-badge" src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83" class="apple-img" alt="Download on the App Store">
+                </a>
+                <!-- TODO: replace with your Kpop app's Google Play link -->
+                <a href="https://play.google.com/store/apps/details?id=YOUR.KPOP.PACKAGE.NAME">
+                    <img id="google-badge" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" class="google-img" alt="Get it on Google Play">
+                </a>
+            </div>
+        </div>
+
+        <!-- ABOUT -->
+        <div class="container wide">
+            <h2 data-i18n="aboutTitle">What is Kpop Song Quiz?</h2>
+            <p class="about-text" data-i18n="aboutText">
+                Kpop Song Quiz is a music game for K-pop fans. Listen to a 30-second preview, guess the song, and climb the leaderboard. Play solo to train your ears, or create a room and battle your friends in real time.
+            </p>
+        </div>
+
+        <!-- HOW IT WORKS -->
+        <div class="container wide">
+            <div class="section-label" data-i18n="stepsTitle">How it works</div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div>
+                        <div class="step-title" data-i18n="s1t">Listen</div>
+                        <div class="step-desc" data-i18n="s1d">A 30-second preview plays.</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div>
+                        <div class="step-title" data-i18n="s2t">Guess</div>
+                        <div class="step-desc" data-i18n="s2d">Choose or type the song title.</div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div>
+                        <div class="step-title" data-i18n="s3t">Win</div>
+                        <div class="step-desc" data-i18n="s3d">The faster you answer, the more points you earn!</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FEATURES -->
+        <div class="container wide">
+            <div class="section-label" data-i18n="featuresTitle">Features</div>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-title" data-i18n="f1t">🎧 Solo &amp; Multiplayer</div>
+                    <div class="feature-desc" data-i18n="f1d">Play on your own, or create a room and invite friends with a simple code.</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title" data-i18n="f2t">💿 Album Cover Challenge</div>
+                    <div class="feature-desc" data-i18n="f2d">Can you recognize the album from a partly hidden cover?</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title" data-i18n="f3t">🎤 Your favorite artists</div>
+                    <div class="feature-desc" data-i18n="f3d">Girl groups, boy groups, soloists, K-hip hop and classics.</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title" data-i18n="f4t">🔥 Daily challenges</div>
+                    <div class="feature-desc" data-i18n="f4d">Complete daily goals, keep your streak alive and earn XP.</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title" data-i18n="f5t">⌨️ Two ways to answer</div>
+                    <div class="feature-desc" data-i18n="f5d">Pick from four options, or type the title yourself for a x3 score.</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title" data-i18n="f6t">💡 Hints</div>
+                    <div class="feature-desc" data-i18n="f6d">Stuck? Use a hint to get a little help.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SOCIAL + FOOTER -->
+        <div class="container">
+            <div class="social-title" data-i18n="follow">Follow Us</div>
+            <div class="social-grid">
+                <!-- TODO: replace with your Kpop app's Instagram and Discord links -->
+                <a href="https://www.instagram.com/YOUR_KPOP_ACCOUNT/"><img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" class="social-icon" alt="Instagram"></a>
+                <a href="https://discord.gg/YOUR_INVITE_CODE"><img src="https://cdn-icons-png.flaticon.com/512/5968/5968756.png" class="social-icon" alt="Discord"></a>
+            </div>
+
+            <div class="footer-links">
+                <a href="https://docs.google.com/document/d/1YsZ_tyHPHAW0VttfDoBRyYv1ATzJIHmHI-s8dU_P484/edit?usp=sharing" target="_blank" rel="noopener" data-i18n="privacy">Privacy Policy</a>
+                <a href="mailto:KpopQuiz.help@gmail.com?subject=Kpop%20Song%20Quiz%20Support" data-i18n="contact">Contact</a>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const translations = {
+            en: {
+                pageTitle: "Kpop Song Quiz | K-pop Music Trivia",
+                metaDesc: "Think you know K-pop? Guess the song before your friends do! Play solo or battle friends in real time.",
+                title: "Kpop Song Quiz",
+                desc: "Think you know K-pop? Guess the song before your friends do!",
+                aboutTitle: "What is Kpop Song Quiz?",
+                aboutText: "Kpop Song Quiz is a music game for K-pop fans. Listen to a 30-second preview, guess the song, and climb the leaderboard. Play solo to train your ears, or create a room and battle your friends in real time.",
+                stepsTitle: "How it works",
+                s1t: "Listen", s1d: "A 30-second preview plays.",
+                s2t: "Guess", s2d: "Choose or type the song title.",
+                s3t: "Win", s3d: "The faster you answer, the more points you earn!",
+                featuresTitle: "Features",
+                f1t: "🎧 Solo & Multiplayer", f1d: "Play on your own, or create a room and invite friends with a simple code.",
+                f2t: "💿 Album Cover Challenge", f2d: "Can you recognize the album from a partly hidden cover?",
+                f3t: "🎤 Your favorite artists", f3d: "Girl groups, boy groups, soloists, K-hip hop and classics.",
+                f4t: "🔥 Daily challenges", f4d: "Complete daily goals, keep your streak alive and earn XP.",
+                f5t: "⌨️ Two ways to answer", f5d: "Pick from four options, or type the title yourself for a x3 score.",
+                f6t: "💡 Hints", f6d: "Stuck? Use a hint to get a little help.",
+                follow: "Follow Us",
+                contact: "Contact",
+                privacy: "Privacy Policy",
+                appleLocale: "en-us",
+                googleLocale: "en",
+                appleAlt: "Download on the App Store",
+                googleAlt: "Get it on Google Play"
+            },
+            ja: {
+                pageTitle: "Kpop Song Quiz | K-POP音楽クイズ",
+                metaDesc: "K-POPに自信ある？友達より先に曲を当てよう！ソロでも、友達とリアルタイム対戦でも遊べます。",
+                title: "Kpop Song Quiz",
+                desc: "K-POPに自信ある？友達より先に曲を当てよう！",
+                aboutTitle: "Kpop Song Quizとは？",
+                aboutText: "Kpop Song QuizはK-POPファンのための音楽クイズゲームです。30秒のプレビューを聴いて曲を当て、ランキングを駆け上がろう。ソロで耳を鍛えるのも、ルームを作って友達とリアルタイムで対戦するのもOK。",
+                stepsTitle: "遊び方",
+                s1t: "聴く", s1d: "30秒のプレビューが流れます。",
+                s2t: "当てる", s2d: "曲名を選ぶか入力しよう。",
+                s3t: "勝つ", s3d: "早く答えるほど高得点！",
+                featuresTitle: "特徴",
+                f1t: "🎧 ソロ＆マルチプレイヤー", f1d: "ひとりで遊ぶことも、ルームコードで友達を招待して対戦することもできます。",
+                f2t: "💿 アルバムジャケットチャレンジ", f2d: "一部が隠されたジャケットから、アルバムを当てられる？",
+                f3t: "🎤 お気に入りのアーティスト", f3d: "ガールズグループ、ボーイズグループ、ソロ、Kヒップホップ、クラシック。",
+                f4t: "🔥 デイリーチャレンジ", f4d: "毎日の目標をクリアして、ストリークを維持し、XPを獲得しよう。",
+                f5t: "⌨️ 2つの回答方法", f5d: "4つの選択肢から選ぶか、曲名を入力してスコア3倍を狙おう。",
+                f6t: "💡 ヒント", f6d: "行き詰まったらヒントを使おう。",
+                follow: "フォローしよう",
+                contact: "お問い合わせ",
+                privacy: "プライバシーポリシー",
+                appleLocale: "ja-jp",
+                googleLocale: "ja",
+                appleAlt: "App Storeでダウンロード",
+                googleAlt: "Google Play で手に入れよう"
+            },
+            ko: {
+                pageTitle: "Kpop Song Quiz | K-POP 음악 퀴즈",
+                metaDesc: "K-POP 좀 아시나요? 친구보다 먼저 노래를 맞혀 보세요! 혼자서도, 친구들과 실시간 대결로도 즐길 수 있어요.",
+                title: "Kpop Song Quiz",
+                desc: "K-POP 좀 아시나요? 친구보다 먼저 노래를 맞혀 보세요!",
+                aboutTitle: "Kpop Song Quiz는 어떤 게임인가요?",
+                aboutText: "Kpop Song Quiz는 K-POP 팬을 위한 음악 퀴즈 게임입니다. 30초 미리듣기를 듣고 노래를 맞혀 순위표를 올라가 보세요. 혼자서 귀를 단련해도 좋고, 방을 만들어 친구들과 실시간으로 대결할 수도 있어요.",
+                stepsTitle: "게임 방법",
+                s1t: "듣기", s1d: "30초 미리듣기가 재생됩니다.",
+                s2t: "맞히기", s2d: "노래 제목을 고르거나 입력하세요.",
+                s3t: "승리하기", s3d: "빠르게 답할수록 더 높은 점수를 받아요!",
+                featuresTitle: "주요 기능",
+                f1t: "🎧 솔로 & 멀티플레이어", f1d: "혼자 즐기거나 방 코드로 친구들을 초대해 대결해 보세요.",
+                f2t: "💿 앨범 커버 챌린지", f2d: "일부가 가려진 커버만 보고 앨범을 맞힐 수 있나요?",
+                f3t: "🎤 좋아하는 아티스트", f3d: "걸그룹, 보이그룹, 솔로 아티스트, K-힙합, 클래식.",
+                f4t: "🔥 일일 챌린지", f4d: "매일 목표를 달성하고 연속 기록을 유지하며 XP를 모으세요.",
+                f5t: "⌨️ 두 가지 답변 방식", f5d: "4개의 보기에서 고르거나, 제목을 직접 입력해 점수 3배를 노려 보세요.",
+                f6t: "💡 힌트", f6d: "막혔을 때 힌트로 도움을 받아 보세요.",
+                follow: "팔로우하기",
+                contact: "문의하기",
+                privacy: "개인정보 처리방침",
+                appleLocale: "ko-kr",
+                googleLocale: "ko",
+                appleAlt: "App Store에서 다운로드",
+                googleAlt: "Google Play에서 다운로드"
+            }
+        };
+
+        function setLang(lang) {
+            if (!translations[lang]) lang = 'en';
+            const t = translations[lang];
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key] !== undefined) el.textContent = t[key];
+            });
+
+            document.title = t.pageTitle;
+            document.getElementById('meta-desc').setAttribute('content', t.metaDesc);
+            document.documentElement.lang = lang;
+
+            // Store badges in the right language
+            const apple = document.getElementById('apple-badge');
+            apple.src = 'https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/' + t.appleLocale + '?size=250x83';
+            apple.alt = t.appleAlt;
+            const google = document.getElementById('google-badge');
+            google.src = 'https://play.google.com/intl/en_us/badges/static/images/badges/' + t.googleLocale + '_badge_web_generic.png';
+            google.alt = t.googleAlt;
+
+            // Highlight the active flag
+            ['en', 'ja', 'ko'].forEach(l => {
+                document.getElementById('flag-' + l).classList.toggle('active', l === lang);
+            });
+
+            try { localStorage.setItem('lang', lang); } catch (e) {}
+        }
+
+        window.addEventListener('load', () => {
+            // Pick the language: saved choice first, then the browser language, else English
+            let lang = 'en';
+            try { lang = localStorage.getItem('lang') || ''; } catch (e) {}
+            if (!translations[lang]) {
+                const nav = (navigator.language || 'en').slice(0, 2).toLowerCase();
+                lang = translations[nav] ? nav : 'en';
+            }
+            setLang(lang);
+
+            const video = document.getElementById('bg-video');
+            video.play().catch(() => {
+                console.log("Autoplay waiting for user interaction.");
+            });
+        });
+    </script>
+
+</body>
+</html>
